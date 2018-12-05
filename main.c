@@ -87,6 +87,21 @@ void printSudokuData(){
     }
 }
 
+void *th_checkRows(){
+    int first = 0;
+    for (int row = 0; row < 9 ; row++){
+        for (int itemInRow = 0 ; itemInRow < 9 ; itemInRow++){
+            for (int itemInCol = 0 ; itemInCol < 9 ; itemInCol++){
+                if(sudokuInstance.rows[row][itemInRow] == sudokuInstance.rows[row][itemInCol] && itemInRow != itemInCol){
+                    first==0?printf("Intersection Found in Rows : [%d : %d] ",row+1,itemInCol+1):printf("and [%d : %d]\n",row+1,itemInCol+1);
+                    if (first==0) first = -1 ;else first = 0;
+                    break;
+                }
+            }
+        }
+    }
+}
+
 int main (){
     int inputData[SUDOKU_SIZE][SUDOKU_SIZE];
     //Store InputDataSudoku
@@ -103,5 +118,15 @@ int main (){
     //Show Data Entered
     printSudokuData();
 
+    //Checking Sudoku using threads
+    pthread_t tid[THREADS_NUMBER];
+
+    if(pthread_create(&tid[0], NULL, th_checkRows, NULL) != 0){
+        perror("pthread_create"), exit(1);
+    }
+    if(pthread_join(tid[0], NULL) != 0){
+        perror("pthread_join"), exit(1);
+    }
+    
     return 1;
 }
