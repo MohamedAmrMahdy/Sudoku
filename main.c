@@ -11,6 +11,21 @@
 6 4 2 9 7 8 5 3 1
 9 7 8 5 3 1 6 4 2
 
+- Sudoku Array Numbers Map
+
+   0 1 2 3 4 5 6 7 8
+ --------------------
+0| 1 2 3 4 5 6 7 8 9
+1| 4 5 6 7 8 9 1 2 3
+2| 6 8 9 1 2 3 4 5 6
+3| 2 1 4 3 6 5 8 9 7
+4| 3 6 5 8 9 7 2 1 4
+5| 8 9 7 2 1 4 3 6 5
+6| 5 3 1 6 4 2 9 7 8
+7| 6 4 2 9 7 8 5 3 1
+8| 9 7 8 5 3 1 6 4 2
+
+
 - SubGrids Array Row Number Map
 
 +---+---+---+
@@ -25,16 +40,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <semaphore.h>
 #define SUDOKU_SIZE 9
 #define THREADS_NUMBER 11
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+
+sem_t s1,s2;
+struct subGridData{
+    int value;
+    int oldRowNum;
+    int oldColumnNum;
+};
 struct sudokuData{
     int rows[SUDOKU_SIZE][SUDOKU_SIZE];
     int columns[SUDOKU_SIZE][SUDOKU_SIZE];
-    int subGrids[SUDOKU_SIZE][SUDOKU_SIZE];
+    struct subGridData subGrids[SUDOKU_SIZE][SUDOKU_SIZE];
+};
+struct sudokuData sudokuInstance;
+
+struct dublicatePoints {
+    int row;
+    int column;
 };
 
-struct sudokuData sudokuInstance;
+struct dublicatePoints dublicateInstance[SUDOKU_SIZE*SUDOKU_SIZE];
+int dublicateNum = 0;
 
 void storeSudokuData(int input[SUDOKU_SIZE][SUDOKU_SIZE]){
     //Store rows
@@ -54,7 +88,9 @@ void storeSudokuData(int input[SUDOKU_SIZE][SUDOKU_SIZE]){
     for (int row=0; row < SUDOKU_SIZE ; row++){
         for (int column=0; column < SUDOKU_SIZE ; column++){
             blockNumber = (row/3)*3 + (column/3);
-            sudokuInstance.subGrids[blockNumber][colNum[blockNumber]] = input[row][column];
+            sudokuInstance.subGrids[blockNumber][colNum[blockNumber]].value = input[row][column];
+            sudokuInstance.subGrids[blockNumber][colNum[blockNumber]].oldRowNum = row;
+            sudokuInstance.subGrids[blockNumber][colNum[blockNumber]].oldColumnNum = column;
             colNum[blockNumber]++;
         }
     }
@@ -81,29 +117,99 @@ void printSudokuData(){
     printf("Sub-Grids Stored :\n");
     for (int row=0; row < SUDOKU_SIZE ; row++){
         for (int column=0; column < SUDOKU_SIZE ; column++){
-            printf("%d, ",sudokuInstance.subGrids[row][column]);
+            printf("%d, ",sudokuInstance.subGrids[row][column].value);
         }
         printf ("\n");
     }
 }
 
+int matchedInDub (int row, int column){
+    for (int i = 0 ; i < dublicateNum;i++){
+        if(row == dublicateInstance[i].row && column == dublicateInstance[i].column )
+        return 1;
+    }
+    return 0;
+}
+
 void *th_checkRows(){
-    int first = 0;
-    for (int row = 0; row < 9 ; row++){
-        for (int itemInRow = 0 ; itemInRow < 9 ; itemInRow++){
-            for (int itemInCol = 0 ; itemInCol < 9 ; itemInCol++){
+    for (int row = 0; row < SUDOKU_SIZE ; row++){
+        for (int itemInRow = 0 ; itemInRow < SUDOKU_SIZE ; itemInRow++){
+            for (int itemInCol = 0 ; itemInCol < SUDOKU_SIZE ; itemInCol++){
                 if(sudokuInstance.rows[row][itemInRow] == sudokuInstance.rows[row][itemInCol] && itemInRow != itemInCol){
-                    first==0?printf("Intersection Found in Rows : [%d : %d] ",row+1,itemInCol+1):printf("and [%d : %d]\n",row+1,itemInCol+1);
-                    if (first==0) first = -1 ;else first = 0;
-                    break;
+                    while(1){
+                        if(sem_wait(&s1) == -1){
+                            perror("sem_wait");exit(EXIT_FAILURE);
+                        }
+                            dublicateInstance[dublicateNum].row = row;
+                            dublicateInstance[dublicateNum].column = itemInRow;
+                            dublicateNum++;
+                        if(sem_post(&s1) == -1){
+                            perror("sem_post");exit(EXIT_FAILURE);
+                        }
+                        break;
+                    }
                 }
             }
         }
     }
+    pthread_exit(NULL);
+}
+
+void *th_checkColumns(){
+    for (int row = 0; row < SUDOKU_SIZE ; row++){
+        for (int itemInRow = 0 ; itemInRow < SUDOKU_SIZE ; itemInRow++){
+            for (int itemInCol = 0 ; itemInCol < SUDOKU_SIZE ; itemInCol++){
+                if(sudokuInstance.columns[row][itemInRow] == sudokuInstance.columns[row][itemInCol] && itemInRow != itemInCol){
+                    while(1){
+                        if(sem_wait(&s1) == -1){
+                            perror("sem_wait");exit(EXIT_FAILURE);
+                        }
+                            dublicateInstance[dublicateNum].column = row;
+                            dublicateInstance[dublicateNum].row = itemInRow;
+                            dublicateNum++;
+                        if(sem_post(&s1) == -1){
+                            perror("sem_post");exit(EXIT_FAILURE);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    pthread_exit(NULL);
+}
+
+void *th_checkSubGrids(){
+    for (int row = 0; row < SUDOKU_SIZE ; row++){
+        for (int itemInRow = 0 ; itemInRow < SUDOKU_SIZE ; itemInRow++){
+            for (int itemInCol = 0 ; itemInCol < SUDOKU_SIZE ; itemInCol++){
+                if(sudokuInstance.subGrids[row][itemInRow].value == sudokuInstance.subGrids[row][itemInCol].value && itemInRow != itemInCol){
+                    while(1){
+                        if(sem_wait(&s1) == -1){
+                            perror("sem_wait");exit(EXIT_FAILURE);
+                        }
+                            dublicateInstance[dublicateNum].row = sudokuInstance.subGrids[row][itemInRow].oldRowNum;
+                            dublicateInstance[dublicateNum].column = sudokuInstance.subGrids[row][itemInRow].oldColumnNum;
+                            dublicateNum++;
+                        if(sem_post(&s1) == -1){
+                            perror("sem_post");exit(EXIT_FAILURE);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    pthread_exit(NULL);
 }
 
 int main (){
     int inputData[SUDOKU_SIZE][SUDOKU_SIZE];
+    
+    if(sem_init(&s1, 0, 1) == -1){
+		perror("semaphore_init");exit(EXIT_FAILURE);
+	}
+
     //Store InputDataSudoku
     printf("Enter Sudoku Data , %d numbers in each row\n",SUDOKU_SIZE);
     for (int row=0; row < SUDOKU_SIZE ; row++){
@@ -124,9 +230,42 @@ int main (){
     if(pthread_create(&tid[0], NULL, th_checkRows, NULL) != 0){
         perror("pthread_create"), exit(1);
     }
+    if(pthread_create(&tid[1], NULL, th_checkColumns, NULL) != 0){
+        perror("pthread_create"), exit(1);
+    }
+
+    if(pthread_create(&tid[2], NULL, th_checkSubGrids, NULL) != 0){
+        perror("pthread_create"), exit(1);
+    }
+
     if(pthread_join(tid[0], NULL) != 0){
         perror("pthread_join"), exit(1);
     }
+
+    if(pthread_join(tid[1], NULL) != 0){
+        perror("pthread_join"), exit(1);
+    }
+    if(pthread_join(tid[2], NULL) != 0){
+        perror("pthread_join"), exit(1);
+    }
+    if(dublicateNum!=0){
+        printf("Dublicates Found :\n");
+        for (int row=0; row < SUDOKU_SIZE ; row++){
+            for (int column=0; column < SUDOKU_SIZE ; column++){
+                if(matchedInDub(row,column)){
+                    printf(ANSI_COLOR_RED"%d"ANSI_COLOR_RESET", ",sudokuInstance.rows[row][column]);
+                }else{
+                    printf("%d, ",sudokuInstance.rows[row][column]);
+                }
+            }
+            printf ("\n");
+        }
+    }
     
+
+    if(sem_destroy(&s1) == -1){
+		perror("semaphore_destroy");exit(EXIT_FAILURE);
+	}
+
     return 1;
 }
