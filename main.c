@@ -205,67 +205,82 @@ void *th_checkSubGrids(){
 
 int main (){
     int inputData[SUDOKU_SIZE][SUDOKU_SIZE];
-    
+    int option;
     if(sem_init(&s1, 0, 1) == -1){
 		perror("semaphore_init");exit(EXIT_FAILURE);
 	}
+    while(1)
+    {
+        printf("\n\n");
+        printf("1- Enter a Sudoku for the Checker\n");
+        printf("2- Enter a Sudoku for the Solver\n");
+        printf("3- Verify Sudoku Solver\n");
+        printf("4- Exit\n");
+        printf("Chooes an option from above:");
+        scanf("%d", &option);
 
-    //Store InputDataSudoku
-    printf("Enter Sudoku Data , %d numbers in each row\n",SUDOKU_SIZE);
-    for (int row=0; row < SUDOKU_SIZE ; row++){
-        for (int column=0; column < SUDOKU_SIZE ; column++){
-            scanf("%d",&inputData[row][column]);
-        }
-    }
-
-    //store structured sudoku
-    storeSudokuData(inputData);
-
-    //Show Data Entered
-    printSudokuData();
-
-    //Checking Sudoku using threads
-    pthread_t tid[THREADS_NUMBER];
-
-    if(pthread_create(&tid[0], NULL, th_checkRows, NULL) != 0){
-        perror("pthread_create"), exit(1);
-    }
-    if(pthread_create(&tid[1], NULL, th_checkColumns, NULL) != 0){
-        perror("pthread_create"), exit(1);
-    }
-
-    if(pthread_create(&tid[2], NULL, th_checkSubGrids, NULL) != 0){
-        perror("pthread_create"), exit(1);
-    }
-
-    if(pthread_join(tid[0], NULL) != 0){
-        perror("pthread_join"), exit(1);
-    }
-
-    if(pthread_join(tid[1], NULL) != 0){
-        perror("pthread_join"), exit(1);
-    }
-    if(pthread_join(tid[2], NULL) != 0){
-        perror("pthread_join"), exit(1);
-    }
-    if(dublicateNum!=0){
-        printf("Dublicates Found :\n");
-        for (int row=0; row < SUDOKU_SIZE ; row++){
-            for (int column=0; column < SUDOKU_SIZE ; column++){
-                if(matchedInDub(row,column)){
-                    printf(ANSI_COLOR_RED"%d"ANSI_COLOR_RESET", ",sudokuInstance.rows[row][column]);
-                }else{
-                    printf("%d, ",sudokuInstance.rows[row][column]);
+        if(option == 1)
+        {
+            //Store InputDataSudoku
+            printf("Enter Sudoku Data , %d numbers in each row\n",SUDOKU_SIZE);
+            for (int row=0; row < SUDOKU_SIZE ; row++){
+                for (int column=0; column < SUDOKU_SIZE ; column++){
+                    scanf("%d",&inputData[row][column]);
                 }
             }
-            printf ("\n");
-        }
-    }
-    
 
-    if(sem_destroy(&s1) == -1){
-		perror("semaphore_destroy");exit(EXIT_FAILURE);
-	}
+            //store structured sudoku
+            storeSudokuData(inputData);
+
+            //Show Data Entered
+            printSudokuData();
+
+            //Checking Sudoku using threads
+            pthread_t tid[THREADS_NUMBER];
+
+            if(pthread_create(&tid[0], NULL, th_checkRows, NULL) != 0){
+                perror("pthread_create"), exit(1);
+            }
+            if(pthread_create(&tid[1], NULL, th_checkColumns, NULL) != 0){
+                perror("pthread_create"), exit(1);
+            }
+
+            if(pthread_create(&tid[2], NULL, th_checkSubGrids, NULL) != 0){
+                perror("pthread_create"), exit(1);
+            }
+
+            if(pthread_join(tid[0], NULL) != 0){
+                perror("pthread_join"), exit(1);
+            }
+
+            if(pthread_join(tid[1], NULL) != 0){
+                perror("pthread_join"), exit(1);
+            }
+            if(pthread_join(tid[2], NULL) != 0){
+                perror("pthread_join"), exit(1);
+            }
+            if(dublicateNum!=0){
+                printf("Dublicates Found :\n");
+                for (int row=0; row < SUDOKU_SIZE ; row++){
+                    for (int column=0; column < SUDOKU_SIZE ; column++){
+                        if(matchedInDub(row,column)){
+                            printf(ANSI_COLOR_RED"%d"ANSI_COLOR_RESET", ",sudokuInstance.rows[row][column]);
+                        }else{
+                            printf("%d, ",sudokuInstance.rows[row][column]);
+                        }
+                    }
+                    printf ("\n");
+                }
+            }
+            
+            if(sem_destroy(&s1) == -1){
+                perror("semaphore_destroy");exit(EXIT_FAILURE);
+            }
+        }
+        else if(option == 2) {}
+        else if(option == 3) {}
+        else if(option == 4) { printf("\n Exiting, Thanks for using!\n"); break; }
+    }
 
     return 1;
 }
