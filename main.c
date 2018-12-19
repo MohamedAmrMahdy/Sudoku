@@ -203,61 +203,50 @@ void *th_checkSubGrids(){
     pthread_exit(NULL);
 }
 
-int solveSudoku(int puzzle[][9]) {
-    return sudokuHelper(puzzle, 0, 0);
+int solveSudoku() {
+    return sudokuHelper(sudokuInstance.rows, 0, 0);
 }
 
-/*
- * A recursive function that does all the gruntwork in solving
- * the puzzle.
- */
-int sudokuHelper(int puzzle[][9], int row, int column) {
+int sudokuHelper(int row, int column) {
     int nextNumber = 1;
-    /*
-     * Have we advanced past the puzzle?  If so, hooray, all
-     * previous cells have valid contents!  We're done!
-     */
-    if (9 == row) {
+    if (row == 9) 
+    {
         return 1;
     }
-
-    /*
-     * Is this element already set?  If so, we don't want to 
-     * change it.
-     */
-    if (puzzle[row][column]) {
-        if (column == 8) {
-            if (sudokuHelper(puzzle, row+1, 0)) return 1;
-        } else {
-            if (sudokuHelper(puzzle, row, column+1)) return 1;
+    if (sudokuInstance.rows[row][column]) 
+    {
+        if (column == 8) 
+        {
+            if (sudokuHelper(row+1, 0)) return 1;
+        } 
+        else 
+        {
+            if (sudokuHelper(row, column+1)) return 1;
         }
         return 0;
     }
 
-    /*
-     * Iterate through the possible numbers for this empty cell
-     * and recurse for every valid one, to test if it's part
-     * of the valid solution.
-     */
-    for (; nextNumber<10; nextNumber++) {
-        if(isValid(nextNumber, puzzle, row, column)) {
-            puzzle[row][column] = nextNumber;
-            if (column == 8) {
-                if (sudokuHelper(puzzle, row+1, 0)) return 1;
-            } else {
-                if (sudokuHelper(puzzle, row, column+1)) return 1;
+    for (; nextNumber<10; nextNumber++) 
+    {
+        if(isValid(nextNumber, sudokuInstance.rows, row, column)) 
+        {
+            sudokuInstance.rows[row][column] = nextNumber;
+            sudokuInstance.rows[row][column] = nextNumber;
+            if (column == 8) 
+            {
+                if (sudokuHelper(row+1, 0)) return 1;
+            } 
+            else 
+            {
+                if (sudokuHelper(row, column+1)) return 1;
             }
-            puzzle[row][column] = 0;
+            sudokuInstance.rows[row][column] = 0;
         }
     }
     return 0;
 }
 
-/*
- * Checks to see if a particular value is presently valid in a
- * given position.
- */
-int isValid(int number, int puzzle[][9], int row, int column) {
+int isValid(int number, int row, int column) {
     int i=0;
     int modRow = 3*(row/3);
     int modCol = 3*(column/3);
@@ -266,37 +255,27 @@ int isValid(int number, int puzzle[][9], int row, int column) {
     int col1 = (column+2)%3;
     int col2 = (column+4)%3;
 
-    /* Check for the value in the given row and column */
-    for (i=0; i<9; i++) {
-        if (puzzle[i][column] == number) return 0;
-        if (puzzle[row][i] == number) return 0;
-    }
-    
-    /* Check the remaining four spaces in this sector */
-    if(puzzle[row1+modRow][col1+modCol] == number) return 0;
-    if(puzzle[row2+modRow][col1+modCol] == number) return 0;
-    if(puzzle[row1+modRow][col2+modCol] == number) return 0;
-    if(puzzle[row2+modRow][col2+modCol] == number) return 0;
+    for (i=0; i<9; i++) 
+    {
+        if (sudokuInstance.rows[i][column] == number) return 0;
+        if (sudokuInstance.rows[row][i] == number) return 0;
+    }  
+    if(sudokuInstance.rows[row1+modRow][col1+modCol] == number) return 0;
+    if(sudokuInstance.rows[row2+modRow][col1+modCol] == number) return 0;
+    if(sudokuInstance.rows[row1+modRow][col2+modCol] == number) return 0;
+    if(sudokuInstance.rows[row2+modRow][col2+modCol] == number) return 0;
     return 1;
 }
 
-/*
- * Convenience function to print out the puzzle.
- */
-void printSudoku(int puzzle[][9]) 
+void printSudoku()
 {
-    int i=0, j=0;
-    for (i=0; i<9; i++) 
+    for (int row=0; row < SUDOKU_SIZE ; row++)
     {
-        for (j=0; j<9; j++) 
+        for (int column=0; column < SUDOKU_SIZE ; column++)
         {
-            if (j == 8) 
-            {
-                printf("%d\n", puzzle[i][j]);
-            } else {
-                printf("%d ", puzzle[i][j]);
-            }
+            printf("%d ",sudokuInstance.rows[row][column]);
         }
+        printf ("\n");
     }
 }
 int main (){
@@ -330,7 +309,7 @@ int main (){
             storeSudokuData(inputData);
 
             // Print the Sudoku and all the generated data.
-            // printSudokuData();
+            //printSudokuData();
 
             //Checking Sudoku using threads
             pthread_t tid[THREADS_NUMBER];
@@ -378,22 +357,27 @@ int main (){
         }
         else if(option == 2) {
             int i;
-            for (i=0; i<9; i++) {
+            for (i=0; i<SUDOKU_SIZE; i++) {
                 scanf("%d %d %d %d %d %d %d %d %d", &puzzle[i][0],
                 &puzzle[i][1], &puzzle[i][2], &puzzle[i][3], &puzzle[i][4],
                 &puzzle[i][5], &puzzle[i][6], &puzzle[i][7], &puzzle[i][8]);
-                /*fscanf(sudokuFile, "%d %d %d %d %d %d %d %d %d", &puzzle[i][0],
-                &puzzle[i][1], &puzzle[i][2], &puzzle[i][3], &puzzle[i][4],
-                &puzzle[i][5], &puzzle[i][6], &puzzle[i][7], &puzzle[i][8]);*/
             }
+                for (int row=0; row < SUDOKU_SIZE ; row++){
+                    for (int column=0; column < SUDOKU_SIZE ; column++){
+                        inputData[row][column] = puzzle[row][column];
+                    }
+            }
+            storeSudokuData(inputData);
             printf("\nSolved Sudoku:\n");
             if (solveSudoku(puzzle)) {
-                printSudoku(puzzle);
-            } else {
-                puts("Illegal sudoku (or a broken algorithm [not likely])");
+                printSudoku(); /* Prints only the Sudoku in usual form. */
+                //printSudokuData(); /* Will print all Stored data: Rows/Columns/Grids. */
+            } 
+            else {
+                printf("Something went wrong.");
             }
         }
-        else if(option == 3) {}
+        else if(option == 3) { }
         else if(option == 4) { printf("\n Exiting, Thanks for using!\n"); break; }
     }
 
