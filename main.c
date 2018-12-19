@@ -105,7 +105,7 @@ void printSudokuData(){
         }
         printf ("\n");
     }
-    //Store Columns
+    //Print Columns
     printf("Columns Stored :\n");
     for (int row=0; row < SUDOKU_SIZE ; row++){
         for (int column=0; column < SUDOKU_SIZE ; column++){
@@ -113,7 +113,7 @@ void printSudokuData(){
         }
         printf ("\n");
     }
-    //Store Sub-Grids
+    //Print Sub-Grids
     printf("Sub-Grids Stored :\n");
     for (int row=0; row < SUDOKU_SIZE ; row++){
         for (int column=0; column < SUDOKU_SIZE ; column++){
@@ -203,68 +203,81 @@ void *th_checkSubGrids(){
     pthread_exit(NULL);
 }
 
-int isValid(int number, int row, int column) {
-    int i=0;
-    int modRow = 3*(row/3);
-    int modCol = 3*(column/3);
-    int row1 = (row+2)%3;
-    int row2 = (row+4)%3;
-    int col1 = (column+2)%3;
-    int col2 = (column+4)%3;
+/*
 
+solChecker is a function which checks the number sent from startSolve.
+solChecker checks whether the number is dublicated in: 1-current row. 2- current column 3- current subgrid.
+blockNumber is a 'magical' calculation using mod function to figure out the cell location in the subgrids. (check SubGrids Array Row Number Map at line#29)
+
+If the number is found in any of those searches, it returns 0 and passes to the next search.
+If all searches return 0's, The function returns 0 to startSolve.
+
+*/
+int solChecker(int number, int row, int column) {
+    int i=0, blockNumber;
     for (i=0; i<9; i++) 
     {
         if (sudokuInstance.rows[i][column] == number) return 0;
         if (sudokuInstance.rows[row][i] == number) return 0;
-    }  
-    if(sudokuInstance.rows[row1+modRow][col1+modCol] == number) return 0;
-    if(sudokuInstance.rows[row2+modRow][col1+modCol] == number) return 0;
-    if(sudokuInstance.rows[row1+modRow][col2+modCol] == number) return 0;
-    if(sudokuInstance.rows[row2+modRow][col2+modCol] == number) return 0;
+    }
+    blockNumber = (row/3)*3 + (column/3);
+    for(i=0; i<9; i++)
+    {
+        if(sudokuInstance.subGrids[blockNumber][i].value == number) { return 0; break; }
+    }
     return 1;
 }
 
-int sudokuHelper(int row, int column) {
+
+/* 
+
+startSolve is a function which basically finds all the empty cells, then starts replacing them with numbers (starting with 1)
+Afterward, startSolve passes the possible solution to solChecker
+
+if solChecker returns 1, that means the number sent to solChecker is a possible correct result and is placed in the Sudoku.
+if solChecker returns 0, that means the number sent to solChecker is invalid, the number is incremented and another attempt is made.
+
+returns 1 if the solving process is a success.
+returns 0 if the solving process is a failure.
+
+*/
+int startSolve(int row, int column) {
     int nextNumber = 1;
     if (row == 9) 
     {
         return 1;
     }
-    if (sudokuInstance.rows[row][column]) 
+    if (sudokuInstance.rows[row][column]) //Checks whether the cell is empty.
     {
         if (column == 8) 
         {
-            if (sudokuHelper(row+1, 0)) return 1;
+            if (startSolve(row+1, 0)) return 1;
         } 
         else 
         {
-            if (sudokuHelper(row, column+1)) return 1;
+            if (startSolve(row, column+1)) return 1;
         }
         return 0;
     }
 
     for (; nextNumber<10; nextNumber++) 
     {
-        if(isValid(nextNumber, row, column)) 
+        if(solChecker(nextNumber, row, column)) 
         {
             sudokuInstance.rows[row][column] = nextNumber;
-            sudokuInstance.rows[row][column] = nextNumber;
+            //sudokuInstance.rows[row][column] = nextNumber;
             if (column == 8) 
             {
-                if (sudokuHelper(row+1, 0)) return 1;
+                if (startSolve(row+1, 0)) return 1;
             } 
             else 
             {
-                if (sudokuHelper(row, column+1)) return 1;
+                if (startSolve(row, column+1)) return 1;
             }
             sudokuInstance.rows[row][column] = 0;
         }
     }
     return 0;
-}
-
-int solveSudoku() {
-    return sudokuHelper(0, 0);
 }
 
 void printSudoku()
@@ -308,7 +321,7 @@ int main (){
             storeSudokuData(inputData);
 
             // Print the Sudoku and all the generated data.
-            //printSudokuData();
+            printSudokuData();
 
             //Checking Sudoku using threads
             pthread_t tid[THREADS_NUMBER];
@@ -335,7 +348,7 @@ int main (){
                 perror("pthread_join"), exit(1);
             }
             if(dublicateNum!=0){
-                printf("Dublicates Found :\n");
+                printf("Invalid Sudoku, Dublicates Found :\n");
                 for (int row=0; row < SUDOKU_SIZE ; row++){
                     for (int column=0; column < SUDOKU_SIZE ; column++){
                         if(matchedInDub(row,column)){
@@ -348,7 +361,7 @@ int main (){
                 }
             dublicateNum=0;
             }
-            else if(dublicateNum==0){ printf("\nValid Sudoku."); }
+            else if(dublicateNum==0){ printf("\nValid Sudoku.\n"); }
             
             if(sem_destroy(&s1) == -1){
                 perror("semaphore_destroy");exit(EXIT_FAILURE);
@@ -365,14 +378,14 @@ int main (){
                 }
             }
             storeSudokuData(inputData);
-            if (solveSudoku()) 
+            if (startSolve(0, 0)) 
             {
                 printf("\nSolved Sudoku:\n");
                 printSudoku(); /* Prints only the Sudoku in usual form. */
                 //printSudokuData(); /* Will print all Stored data: Rows/Columns/Grids. */
             } 
             else {
-                printf("Something went wrong.");
+                printf("Solver failed!");
             }
             break;
         }
