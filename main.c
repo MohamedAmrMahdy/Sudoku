@@ -278,8 +278,8 @@ void printSudoku()
         printf ("\n");
     }
 }
+
 int main (){
-    int puzzle[9][9];
     int inputData[SUDOKU_SIZE][SUDOKU_SIZE];
     int option;
     if(sem_init(&s1, 0, 1) == -1){
@@ -290,8 +290,7 @@ int main (){
         printf("\n\n");
         printf("1- Enter a Sudoku for the Checker\n");
         printf("2- Enter a Sudoku for the Solver\n");
-        printf("3- Verify Sudoku Solver\n");
-        printf("4- Exit\n");
+        printf("3- Exit\n");
         printf("Chooes an option from above:");
         scanf("%d", &option);
 
@@ -354,19 +353,11 @@ int main (){
             if(sem_destroy(&s1) == -1){
                 perror("semaphore_destroy");exit(EXIT_FAILURE);
             }
+            break;
         }
-        else if(option == 2) {
+        else if(option == 2) 
+        {
             int i;
-            /*for (i=0; i<SUDOKU_SIZE; i++) {
-                scanf("%d %d %d %d %d %d %d %d %d", &puzzle[i][0],
-                &puzzle[i][1], &puzzle[i][2], &puzzle[i][3], &puzzle[i][4],
-                &puzzle[i][5], &puzzle[i][6], &puzzle[i][7], &puzzle[i][8]);
-            }
-                for (int row=0; row < SUDOKU_SIZE ; row++){
-                    for (int column=0; column < SUDOKU_SIZE ; column++){
-                        inputData[row][column] = puzzle[row][column];
-                    }
-            }*/
             printf("Enter Sudoku Data , %d numbers in each row\n",SUDOKU_SIZE);
             for (int row=0; row < SUDOKU_SIZE ; row++){
                 for (int column=0; column < SUDOKU_SIZE ; column++){
@@ -374,7 +365,7 @@ int main (){
                 }
             }
             storeSudokuData(inputData);
-            if (solveSudoku(puzzle)) 
+            if (solveSudoku()) 
             {
                 printf("\nSolved Sudoku:\n");
                 printSudoku(); /* Prints only the Sudoku in usual form. */
@@ -383,9 +374,54 @@ int main (){
             else {
                 printf("Something went wrong.");
             }
+            break;
         }
-        else if(option == 3) { }
-        else if(option == 4) { printf("\n Exiting, Thanks for using!\n"); break; }
+        /*else if(option == 3) 
+        { 
+            pthread_t tid[THREADS_NUMBER];
+            if(pthread_create(&tid[0], NULL, th_checkRows, NULL) != 0){
+                perror("pthread_create"), exit(1);
+            }
+            if(pthread_create(&tid[1], NULL, th_checkColumns, NULL) != 0){
+                perror("pthread_create"), exit(1);
+            }
+
+            if(pthread_create(&tid[2], NULL, th_checkSubGrids, NULL) != 0){
+                perror("pthread_create"), exit(1);
+            }
+
+            if(pthread_join(tid[0], NULL) != 0){
+                perror("pthread_join"), exit(1);
+            }
+
+            if(pthread_join(tid[1], NULL) != 0){
+                perror("pthread_join"), exit(1);
+            }
+            if(pthread_join(tid[2], NULL) != 0){
+                perror("pthread_join"), exit(1);
+            }
+            if(dublicateNum!=0){
+                printf("Dublicates Found :\n");
+                for (int row=0; row < SUDOKU_SIZE ; row++){
+                    for (int column=0; column < SUDOKU_SIZE ; column++){
+                        if(matchedInDub(row,column)){
+                            printf(ANSI_COLOR_RED"%d"ANSI_COLOR_RESET" ",sudokuInstance.rows[row][column]);
+                        }else{
+                            printf("%d ",sudokuInstance.rows[row][column]);
+                        }
+                    }
+                    printf ("\n");
+                }
+            dublicateNum=0;
+            }
+            else if(dublicateNum==0){ printf("\nValid Sudoku."); }
+            
+            if(sem_destroy(&s1) == -1){
+                perror("semaphore_destroy");exit(EXIT_FAILURE);
+            }
+        }*/
+        else if(option == 3) { printf("\n Exiting, Thanks for using!\n"); break; }
+        else { printf("\nINVALID OPTION\n"); }
     }
 
     return 1;
