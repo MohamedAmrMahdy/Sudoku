@@ -204,7 +204,7 @@ void *th_checkSubGrids(){
 }
 
 int solveSudoku() {
-    return sudokuHelper(sudokuInstance.rows, 0, 0);
+    return sudokuHelper(0, 0);
 }
 
 int sudokuHelper(int row, int column) {
@@ -228,7 +228,7 @@ int sudokuHelper(int row, int column) {
 
     for (; nextNumber<10; nextNumber++) 
     {
-        if(isValid(nextNumber, sudokuInstance.rows, row, column)) 
+        if(isValid(nextNumber, row, column)) 
         {
             sudokuInstance.rows[row][column] = nextNumber;
             sudokuInstance.rows[row][column] = nextNumber;
@@ -245,6 +245,7 @@ int sudokuHelper(int row, int column) {
     }
     return 0;
 }
+
 
 int isValid(int number, int row, int column) {
     int i=0;
@@ -357,7 +358,7 @@ int main (){
         }
         else if(option == 2) {
             int i;
-            for (i=0; i<SUDOKU_SIZE; i++) {
+            /*for (i=0; i<SUDOKU_SIZE; i++) {
                 scanf("%d %d %d %d %d %d %d %d %d", &puzzle[i][0],
                 &puzzle[i][1], &puzzle[i][2], &puzzle[i][3], &puzzle[i][4],
                 &puzzle[i][5], &puzzle[i][6], &puzzle[i][7], &puzzle[i][8]);
@@ -366,10 +367,17 @@ int main (){
                     for (int column=0; column < SUDOKU_SIZE ; column++){
                         inputData[row][column] = puzzle[row][column];
                     }
+            }*/
+            printf("Enter Sudoku Data , %d numbers in each row\n",SUDOKU_SIZE);
+            for (int row=0; row < SUDOKU_SIZE ; row++){
+                for (int column=0; column < SUDOKU_SIZE ; column++){
+                    scanf("%d",&inputData[row][column]);
+                }
             }
             storeSudokuData(inputData);
-            printf("\nSolved Sudoku:\n");
-            if (solveSudoku(puzzle)) {
+            if (solveSudoku(puzzle)) 
+            {
+                printf("\nSolved Sudoku:\n");
                 printSudoku(); /* Prints only the Sudoku in usual form. */
                 //printSudokuData(); /* Will print all Stored data: Rows/Columns/Grids. */
             } 
