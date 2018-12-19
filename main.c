@@ -203,8 +203,25 @@ void *th_checkSubGrids(){
     pthread_exit(NULL);
 }
 
-int solveSudoku() {
-    return sudokuHelper(0, 0);
+int isValid(int number, int row, int column) {
+    int i=0;
+    int modRow = 3*(row/3);
+    int modCol = 3*(column/3);
+    int row1 = (row+2)%3;
+    int row2 = (row+4)%3;
+    int col1 = (column+2)%3;
+    int col2 = (column+4)%3;
+
+    for (i=0; i<9; i++) 
+    {
+        if (sudokuInstance.rows[i][column] == number) return 0;
+        if (sudokuInstance.rows[row][i] == number) return 0;
+    }  
+    if(sudokuInstance.rows[row1+modRow][col1+modCol] == number) return 0;
+    if(sudokuInstance.rows[row2+modRow][col1+modCol] == number) return 0;
+    if(sudokuInstance.rows[row1+modRow][col2+modCol] == number) return 0;
+    if(sudokuInstance.rows[row2+modRow][col2+modCol] == number) return 0;
+    return 1;
 }
 
 int sudokuHelper(int row, int column) {
@@ -246,26 +263,8 @@ int sudokuHelper(int row, int column) {
     return 0;
 }
 
-
-int isValid(int number, int row, int column) {
-    int i=0;
-    int modRow = 3*(row/3);
-    int modCol = 3*(column/3);
-    int row1 = (row+2)%3;
-    int row2 = (row+4)%3;
-    int col1 = (column+2)%3;
-    int col2 = (column+4)%3;
-
-    for (i=0; i<9; i++) 
-    {
-        if (sudokuInstance.rows[i][column] == number) return 0;
-        if (sudokuInstance.rows[row][i] == number) return 0;
-    }  
-    if(sudokuInstance.rows[row1+modRow][col1+modCol] == number) return 0;
-    if(sudokuInstance.rows[row2+modRow][col1+modCol] == number) return 0;
-    if(sudokuInstance.rows[row1+modRow][col2+modCol] == number) return 0;
-    if(sudokuInstance.rows[row2+modRow][col2+modCol] == number) return 0;
-    return 1;
+int solveSudoku() {
+    return sudokuHelper(0, 0);
 }
 
 void printSudoku()
